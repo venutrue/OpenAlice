@@ -15,7 +15,7 @@ import { createHash, randomBytes } from 'node:crypto'
 
 // ==================== Types ====================
 
-export type BrokerEngine = 'ccxt' | 'alpaca' | 'ibkr' | 'leverup' | 'longbridge' | 'mock'
+export type BrokerEngine = 'ccxt' | 'alpaca' | 'ibkr' | 'leverup' | 'longbridge' | 'zerodha' | 'mock'
 
 export interface ModeOption {
   id: string
@@ -386,6 +386,48 @@ export const LONGBRIDGE_PRESET: BrokerPresetDef = {
   isPaper: (d) => d.mode === 'paper',
 }
 
+
+export const ZERODHA_PRESET: BrokerPresetDef = {
+  id: 'zerodha-kite',
+  label: 'Zerodha Kite (India F&O)',
+  description: 'Zerodha Kite Connect — NSE/NFO index options for Nifty and BankNifty.',
+  category: 'recommended',
+  hint: 'MVP uses a daily Kite access token. Kite access tokens expire the next morning; refresh the token before reconnecting. This adapter initially supports NFO regular orders for NIFTY and BANKNIFTY options only.',
+  defaultName: 'zerodha-kite',
+  badge: 'ZD',
+  badgeColor: 'text-blue-400',
+  engine: 'zerodha',
+  guardCategory: 'securities',
+  modes: [
+    { id: 'live', label: 'Live Trading' },
+  ],
+  zodSchema: z.object({
+    mode: z.literal('live').default('live').describe('Mode'),
+    apiKey: z.string().min(1).describe('API Key'),
+    accessToken: z.string().min(1).describe('Daily Access Token'),
+    defaultProduct: z.enum(['NRML', 'MIS']).default('NRML').describe('Default Product'),
+    defaultValidity: z.enum(['DAY', 'IOC']).default('DAY').describe('Default Validity'),
+    autoslice: z.boolean().default(true).describe('Autoslice Large Orders'),
+    enabledUnderlyings: z.array(z.enum(['NIFTY', 'BANKNIFTY'])).default(['NIFTY', 'BANKNIFTY']).describe('Enabled Index Option Underlyings'),
+  }),
+  subtitleFields: [
+    { field: 'defaultProduct', prefix: 'Zerodha · ' },
+  ],
+  writeOnlyFields: ['accessToken'],
+  fingerprintFields: ['apiKey'],
+  toEngineConfig: (d) => ({
+    apiKey: d.apiKey,
+    accessToken: d.accessToken,
+    defaultProduct: d.defaultProduct,
+    defaultVariety: 'regular',
+    defaultValidity: d.defaultValidity,
+    autoslice: d.autoslice,
+    enabledUnderlyings: d.enabledUnderlyings,
+    refreshInstrumentsAtStartup: true,
+  }),
+  isPaper: () => false,
+}
+
 // ==================== Other ecosystem brokers (lower-tier, isolated) ====================
 
 export const LEVERUP_PRESET: BrokerPresetDef = {
@@ -462,6 +504,7 @@ export const BROKER_PRESET_CATALOG: BrokerPresetDef[] = [
   IBKR_PRESET,
   ALPACA_PRESET,
   LONGBRIDGE_PRESET,
+  ZERODHA_PRESET,
   HYPERLIQUID_PRESET,
   // ---- Crypto ----
   OKX_PRESET,
