@@ -24,6 +24,7 @@ import {
   ALPACA_PRESET,
   IBKR_PRESET,
   LONGBRIDGE_PRESET,
+  ZERODHA_PRESET,
   CCXT_CUSTOM_PRESET,
   SIMULATOR_PRESET,
   BUILTIN_BROKER_PRESETS,
@@ -41,6 +42,7 @@ const SAMPLE_CONFIGS: Record<string, Record<string, unknown>> = {
   alpaca:          { mode: 'paper', apiKey: 'k', apiSecret: 's' },
   'ibkr-tws':      { host: '127.0.0.1', port: 7497, clientId: 0 },
   longbridge:      { mode: 'live', appKey: 'k', appSecret: 's', accessToken: 't' },
+  'zerodha-kite':  { mode: 'live', apiKey: 'k', accessToken: 't', defaultProduct: 'NRML', defaultValidity: 'DAY', autoslice: true, enabledUnderlyings: ['NIFTY', 'BANKNIFTY'] },
   'ccxt-custom':   { exchange: 'kucoin', apiKey: 'k', secret: 's' },
   'leverup-monad': {
     mode: 'testnet',
@@ -141,6 +143,11 @@ describe('preset → engine config translation', () => {
     expect(cfg.paper).toBe(false)
   })
 
+  it('Zerodha maps daily token config to the native engine', () => {
+    const cfg = ZERODHA_PRESET.toEngineConfig({ mode: 'live', apiKey: 'k', accessToken: 't', defaultProduct: 'MIS', defaultValidity: 'IOC', autoslice: false, enabledUnderlyings: ['NIFTY'] })
+    expect(cfg).toMatchObject({ apiKey: 'k', accessToken: 't', defaultProduct: 'MIS', defaultVariety: 'regular', defaultValidity: 'IOC', autoslice: false, enabledUnderlyings: ['NIFTY'] })
+  })
+
   it('IBKR passes host/port/clientId straight through', () => {
     const cfg = IBKR_PRESET.toEngineConfig({ host: '10.0.0.5', port: 7496, clientId: 7 })
     expect(cfg).toMatchObject({ host: '10.0.0.5', port: 7496, clientId: 7 })
@@ -181,6 +188,10 @@ describe('isPaperPreset', () => {
     expect(isPaperPreset('ibkr-tws', { port: 4002 })).toBe(true)
     expect(isPaperPreset('ibkr-tws', { port: 7496 })).toBe(false)
     expect(isPaperPreset('ibkr-tws', { port: 4001 })).toBe(false)
+  })
+
+  it('Zerodha is always live (no paper environment)', () => {
+    expect(isPaperPreset('zerodha-kite', { mode: 'live' })).toBe(false)
   })
 
   it('CCXT Custom checks sandbox/demoTrading flags', () => {

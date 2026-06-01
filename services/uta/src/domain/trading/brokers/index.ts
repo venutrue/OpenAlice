@@ -44,3 +44,7 @@ export type { CcxtBrokerConfig } from './ccxt/index.js'
 // IBKR
 export { IbkrBroker } from './ibkr/index.js'
 export type { IbkrBrokerConfig } from './ibkr/index.js'
+
+// Zerodha
+export { ZerodhaBroker } from './zerodha/index.js'
+export type { ZerodhaBrokerConfig } from './zerodha/index.js'
